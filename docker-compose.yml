@@ -1,0 +1,15 @@
+services:
+  garni-netatmo-sync:
+    image: node:22-alpine
+    container_name: garni-netatmo-sync
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./:/app:ro
+    # .env is not loaded via env_file; src/config.ts reads /app/.env on startup.
+    # After editing .env a container restart is enough, no rebuild needed.
+    environment:
+      - TZ=Europe/Prague
+    command: ["node", "src/main.ts"]
+    # No logging section on purpose: Synology uses its own log driver ("db") and the
+    # Log tab in Container Manager only shows logs from that driver.

@@ -1,0 +1,30 @@
+{
+  "name": "garni-netatmo-sync",
+  "version": "1.0.0",
+  "description": "Sync Garni 419T (Tuya Cloud) temperature into a Netatmo thermostat via its true temperature calibration",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "keywords": [
+    "netatmo",
+    "thermostat",
+    "tuya",
+    "garni",
+    "true-temperature",
+    "synology"
+  ],
+  "main": "src/main.ts",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node src/main.ts",
+    "list": "node src/main.ts --list",
+    "test": "node --test src/*.test.ts",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^7.0.2"
+  }
+}

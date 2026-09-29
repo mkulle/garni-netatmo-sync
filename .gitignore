@@ -1,0 +1,4 @@
+node_modules/
+# Contains credentials – never commit
+.env
+.DS_Store
