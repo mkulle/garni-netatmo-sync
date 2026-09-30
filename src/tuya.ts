@@ -1,6 +1,7 @@
 // Tuya IoT Cloud client (Garni 419T weather station).
 
 import crypto from 'node:crypto';
+import { httpTimeout } from './utils.ts';
 
 export interface TuyaConfig {
   baseUrl: string;
@@ -11,6 +12,11 @@ export interface TuyaConfig {
 export interface TuyaStatus {
   code: string;
   value: unknown;
+}
+
+export interface TuyaDevice {
+  online: boolean;
+  status?: TuyaStatus[];
 }
 
 interface TuyaResponse<T> {
@@ -45,7 +51,7 @@ export class Tuya {
     const headers: Record<string, string> = { client_id: clientId, sign, t, nonce, sign_method: 'HMAC-SHA256' };
     if (auth) headers.access_token = accessToken;
 
-    const res = await fetch(baseUrl + path, { method, headers });
+    const res = await fetch(baseUrl + path, { method, headers, signal: httpTimeout() });
     const json = (await res.json()) as TuyaResponse<T>;
     if (!json.success) {
       // 1010 = token invalid, 1011 = token expired
@@ -65,6 +71,11 @@ export class Tuya {
     this.token = r.access_token;
     this.tokenExpires = Date.now() + (r.expire_time - 120) * 1000;
     return this.token;
+  }
+
+  // Device details: the same datapoints as deviceStatus plus the online flag.
+  device(deviceId: string): Promise<TuyaDevice> {
+    return this.request('GET', `/v1.0/devices/${deviceId}`);
   }
 
   deviceStatus(deviceId: string): Promise<TuyaStatus[]> {

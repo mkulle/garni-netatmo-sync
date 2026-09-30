@@ -1,7 +1,7 @@
 // Netatmo client. Logs in with username and password the same way the official app
 // does, because the truetemperature endpoint is not part of the public developer API.
 
-import { log, sleep } from './utils.ts';
+import { httpTimeout, log, sleep } from './utils.ts';
 
 export interface NetatmoConfig {
   username: string;
@@ -24,6 +24,7 @@ export interface HomeStatus {
       modules?: { id: string; type: string; boiler_status?: boolean }[];
       rooms?: {
         id: string;
+        reachable?: boolean;
         therm_measured_temperature?: number;
         therm_setpoint_temperature?: number;
       }[];
@@ -63,7 +64,7 @@ export class Netatmo {
       if (this.cookies.size) {
         headers.Cookie = [...this.cookies].map(([k, v]) => `${k}=${v}`).join('; ');
       }
-      const res = await fetch(url, { method, headers, body, redirect: 'manual' });
+      const res = await fetch(url, { method, headers, body, redirect: 'manual', signal: httpTimeout() });
       for (const c of res.headers.getSetCookie()) {
         const [pair] = c.split(';');
         const eq = pair.indexOf('=');
@@ -127,6 +128,7 @@ export class Netatmo {
         Authorization: `Bearer ${this.token}`,
       },
       body: json ? JSON.stringify(json) : undefined,
+      signal: httpTimeout(),
     });
     if ((res.status === 401 || res.status === 403) && !retried) {
       this.token = null;
@@ -143,7 +145,12 @@ export class Netatmo {
       const msg = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
       throw new Error(`Netatmo ${path}: HTTP ${res.status} ${msg.slice(0, 300)}`);
     }
-    return (text ? JSON.parse(text) : {}) as T;
+    const data = (text ? JSON.parse(text) : {}) as { status?: string; error?: unknown };
+    // An error can also arrive with HTTP 200; never report it as a successful call
+    if (data.error || (data.status !== undefined && data.status !== 'ok')) {
+      throw new Error(`Netatmo ${path}: ${text.slice(0, 300)}`);
+    }
+    return data as T;
   }
 
   homesData(): Promise<HomesData> {

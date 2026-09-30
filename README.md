@@ -156,6 +156,8 @@ Node only strips types, so only erasable syntax works: no `enum`, `namespace` or
 | --- | --- |
 | `Tuya …: 1106 permission deny` | `TUYA_DEVICE_ID` holds the account UID instead of the Device ID. Or the device is not linked to the project (wrong data center, Garni not in Smart Life). |
 | `Tuya: DP "…" not found. Available: …` | Wrong `TUYA_TEMP_CODE`, pick one of the listed codes. |
+| `Tuya: Garni is offline, …` | The station dropped off Wi-Fi. Tuya would keep returning its last reading, so nothing is calibrated until it is back online. |
+| `The operation was aborted due to timeout` | Tuya or Netatmo did not answer within 30 s. The next pass tries again. |
 | `Netatmo: login failed` | Wrong Netatmo username or password. |
 | `Netatmo …: HTTP 502` | Transient outage on Netatmo's side. The request is retried once after 10 s, then again on the next pass. |
 

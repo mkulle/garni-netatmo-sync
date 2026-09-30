@@ -21,7 +21,7 @@ export function loadConfig(): Config {
       secret: env('TUYA_ACCESS_SECRET'),
       deviceId: env('TUYA_DEVICE_ID'),
       tempCode: env('TUYA_TEMP_CODE', 'va_temperature'),
-      tempScale: Number(env('TUYA_TEMP_SCALE', '10')),
+      tempScale: num('TUYA_TEMP_SCALE', '10', 1),
     },
     netatmo: {
       username: env('NETATMO_USERNAME'),
@@ -30,14 +30,14 @@ export function loadConfig(): Config {
       roomName: env('NETATMO_ROOM_NAME', ''),
     },
     rules: {
-      threshold: Number(env('THRESHOLD', '0.3')),
-      maxDiff: Number(env('MAX_DIFF', '6')),
-      validRange: [Number(env('VALID_MIN', '5')), Number(env('VALID_MAX', '35'))],
+      threshold: num('THRESHOLD', '0.3', 0),
+      maxDiff: num('MAX_DIFF', '6', 0),
+      validRange: [num('VALID_MIN', '5'), num('VALID_MAX', '35')],
       onlyWhenWrong: env('CALIBRATE_ONLY_WHEN_WRONG', '0') === '1',
-      tolerance: Number(env('TOLERANCE', '0.2')),
+      tolerance: num('TOLERANCE', '0.2', 0),
     },
-    intervalSec: Number(env('INTERVAL_SEC', '300')),
-    minCalibrationGapSec: Number(env('MIN_CALIBRATION_GAP_SEC', '900')),
+    intervalSec: num('INTERVAL_SEC', '300', 1),
+    minCalibrationGapSec: num('MIN_CALIBRATION_GAP_SEC', '900', 0),
     dryRun: env('DRY_RUN', '0') === '1',
   };
 }
@@ -47,6 +47,13 @@ function env(name: string, def?: string): string {
   if (v !== undefined && v !== '') return v;
   if (def !== undefined) return def;
   throw new Error(`Missing environment variable ${name}`);
+}
+
+// NaN would silently disable every comparison it takes part in, so fail on startup instead.
+function num(name: string, def: string, min = -Infinity): number {
+  const n = Number(env(name, def));
+  if (!Number.isFinite(n) || n < min) throw new Error(`Environment variable ${name} is not a valid number`);
+  return n;
 }
 
 // Minimal .env loader; variables already set in the environment take precedence.

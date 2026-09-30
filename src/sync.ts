@@ -56,7 +56,10 @@ export class Sync {
 
   private async readGarni(): Promise<number> {
     const { deviceId, tempCode, tempScale } = this.cfg.tuya;
-    const status = await this.tuya.deviceStatus(deviceId);
+    // Tuya keeps serving the last datapoints of an offline device, so check the online flag.
+    const device = await this.tuya.device(deviceId);
+    if (!device.online) throw new Error('Tuya: Garni is offline, its last reading may be stale');
+    const status = device.status ?? [];
     const dp = status.find((s) => s.code === tempCode);
     if (!dp || typeof dp.value !== 'number') {
       throw new Error(`Tuya: DP "${tempCode}" not found. Available: ${status.map((s) => s.code).join(', ')}`);
@@ -84,6 +87,7 @@ export class Sync {
     if (!room || typeof room.therm_measured_temperature !== 'number') {
       throw new Error('Netatmo: room does not report therm_measured_temperature');
     }
+    if (room.reachable === false) throw new Error('Netatmo: thermostat is unreachable, its last reading may be stale');
     const therm = body.home.modules?.find((m) => m.type === 'NATherm1' && typeof m.boiler_status === 'boolean');
     return {
       measured: room.therm_measured_temperature,
