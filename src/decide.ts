@@ -14,6 +14,7 @@ export interface Reading {
   real: number; // Garni
   measured: number; // Netatmo
   setpoint?: number;
+  boiler?: boolean; // relay state; undefined = unknown
 }
 
 export interface Decision {
@@ -21,7 +22,7 @@ export interface Decision {
   message?: string; // what to log; no message = skip silently
 }
 
-export function decide({ real, measured, setpoint }: Reading, rules: Rules): Decision {
+export function decide({ real, measured, setpoint, boiler }: Reading, rules: Rules): Decision {
   const diff = round1(real - measured);
   const [min, max] = rules.validRange;
   if (real < min || real > max) return { calibrate: false, message: `Garni reading outside ${min}–${max} °C, skipping` };
@@ -40,6 +41,15 @@ export function decide({ real, measured, setpoint }: Reading, rules: Rules): Dec
     const underheats = real < lo && -diff >= rules.threshold;
     if (!overheats && !underheats) {
       return { calibrate: false, message: `Thermostat regulates correctly (band ${lo}–${hi} °C), not calibrating` };
+    }
+    // Calibrate only when it changes what the boiler does. Overheating with the boiler off
+    // (e.g. the room cooling down after a setback) or underheating with it already on can't
+    // be fixed by a calibration, it would only shift the thermostat's reading.
+    if (overheats && boiler === false) {
+      return { calibrate: false, message: 'Thermostat is overheating but the boiler is off, not calibrating' };
+    }
+    if (underheats && boiler === true) {
+      return { calibrate: false, message: 'Thermostat is underheating but the boiler is on, not calibrating' };
     }
     return { calibrate: true, message: `Thermostat is ${overheats ? 'overheating' : 'underheating'} → calibrating` };
   }

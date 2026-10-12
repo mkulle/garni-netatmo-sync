@@ -15,7 +15,7 @@ interface Target {
 interface NetatmoReading {
   measured: number;
   setpoint?: number;
-  boiler?: boolean; // actual relay state, logged only
+  boiler?: boolean; // actual relay state
 }
 
 export class Sync {
@@ -39,7 +39,7 @@ export class Sync {
     const boiler = net.boiler === undefined ? '' : `, boiler ${net.boiler ? 'on' : 'off'}`;
     log(`Garni ${real} °C | Netatmo ${net.measured} °C (setpoint ${net.setpoint} °C${boiler}) | diff ${diff}`);
 
-    const { calibrate, message } = decide({ real, measured: net.measured, setpoint: net.setpoint }, this.cfg.rules);
+    const { calibrate, message } = decide({ real, measured: net.measured, setpoint: net.setpoint, boiler: net.boiler }, this.cfg.rules);
     if (message) log(message);
     if (!calibrate) return;
 

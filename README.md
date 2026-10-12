@@ -29,6 +29,8 @@ Every `INTERVAL_SEC` (default 5 minutes) the program:
 | above setpoint + `TOLERANCE` | at least `THRESHOLD` colder than Garni | calibrate (overheating) |
 | below setpoint − `TOLERANCE` | at least `THRESHOLD` warmer than Garni | calibrate (underheating) |
 
+A calibration is also skipped when it wouldn't change what the boiler does: overheating while the boiler is already off (e.g. the room slowly cooling after a night setback), or underheating while it is already on. If Netatmo doesn't report the boiler state, this check is left out.
+
 This works with the Hysteresis algorithm too. In that case set `TOLERANCE` to the threshold configured in the app (default 0.2 °C).
 
 In both modes, calibrations are at least `MIN_CALIBRATION_GAP_SEC` apart. Readings outside `VALID_MIN`–`VALID_MAX` or differing by more than `MAX_DIFF` are skipped as suspicious.

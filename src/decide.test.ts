@@ -31,6 +31,15 @@ test('schedule drops to 19 °C, both above setpoint, diff ≥ threshold → over
   assert.equal(calibrates(21.3, 20.9, 19), true);
 });
 
+test('calibrate only when it changes the boiler state', () => {
+  const withBoiler = (real: number, measured: number, boiler: boolean) =>
+    decide({ real, measured, setpoint: 21, boiler }, rules).calibrate;
+  assert.equal(withBoiler(21.4, 20.9, true), true); // overheating, boiler on → stop it
+  assert.equal(withBoiler(21.4, 20.9, false), false); // overheating, boiler already off
+  assert.equal(withBoiler(20.7, 21.2, false), true); // underheating, boiler off → start it
+  assert.equal(withBoiler(20.7, 21.2, true), false); // underheating, boiler already on
+});
+
 test('without CALIBRATE_ONLY_WHEN_WRONG only the threshold matters', () => {
   const r = { ...rules, onlyWhenWrong: false };
   assert.equal(decide({ real: 21.3, measured: 21.1, setpoint: 21 }, r).calibrate, false);
